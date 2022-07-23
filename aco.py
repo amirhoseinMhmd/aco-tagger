@@ -46,7 +46,6 @@ class ACO(object):
             for ant in ants:
                 for i in range(len(graph.matrix[ant.state])):
                     ant._select_next()
-                # ant.set_cost(graph.matrix[ant.state][ant.tabu[-1]][ant.tabu[0]])
                 if ant.total_cost < best_cost:
                     best_cost = ant.total_cost
                     best_solution = [] + ant.tabu
@@ -64,11 +63,8 @@ class _Ant(object):
         self.pheromone_delta = []
         self.allowed = [i for i in range(graph.rank)]
         self.eta = self.calc_eta(graph)
-        # start = random.randint(0, graph.rank - 1)
         start = 0
-        self.tabu.append(start)
         self.current = start
-        # self.allowed.remove(start)
         self.state = 0
 
     def increase_state(self):
@@ -110,13 +106,13 @@ class _Ant(object):
                 pass
 
         selected = 0
-        if self.state > 0:
-            rand = random.random()
-            for i, probability in enumerate(probabilities):
-                rand -= probability
-                if rand <= 0:
-                    selected = i
-                    break
+        # if self.state >= 0:
+        rand = random.random()
+        for i, probability in enumerate(probabilities):
+            rand -= probability
+            if rand <= 0:
+                selected = i
+                break
         self.tabu.append(selected)
         self.total_cost += self.graph.matrix[self.state][self.current][selected]
         self.current = selected
