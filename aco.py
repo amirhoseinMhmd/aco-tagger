@@ -1,7 +1,7 @@
 import random
 import numpy as np
 
-
+TAG = 32
 class Graph(object):
     def __init__(self, cost_matrix: list, rank: int):
         self.matrix = cost_matrix
@@ -21,8 +21,7 @@ class Graph(object):
 
 
 class ACO(object):
-    def __init__(self, ant_count: int, generations: int, alpha: float, beta: float, rho: float, q: int,
-                 strategy: int):
+    def __init__(self, ant_count: int, generations: int, alpha: float, beta: float, rho: float, q: int, strategy: int):
         self.Q = q
         self.rho = rho
         self.beta = beta
@@ -36,6 +35,8 @@ class ACO(object):
             for j, col in enumerate(row):
                 graph.pheromone[i][j] = [p * self.rho for p in graph.pheromone[i][j]]
                 for ant in ants:
+                    if ant.state -1 >= graph.rank:
+                        continue
                     graph.pheromone[ant.state - 1][i][j] += ant.pheromone_delta[ant.state - 1][i][j]
 
     def solve(self, graph: Graph):
@@ -44,7 +45,7 @@ class ACO(object):
         for gen in range(self.generations):
             ants = [_Ant(self, graph) for i in range(self.ant_count)]
             for ant in ants:
-                for i in range(len(graph.matrix[ant.state])):
+                for i in range(graph.rank +1):
                     ant._select_next()
                 if ant.total_cost < best_cost:
                     best_cost = ant.total_cost
@@ -61,7 +62,7 @@ class _Ant(object):
         self.total_cost = 0.0
         self.tabu = []
         self.pheromone_delta = []
-        self.allowed = [i for i in range(graph.rank)]
+        self.allowed = [i for i in range(TAG)]
         self.eta = self.calc_eta(graph)
         start = 0
         self.current = start
@@ -88,20 +89,19 @@ class _Ant(object):
         return eta
 
     def _select_next(self):
+        # if self.state > self.graph.rank:
+        #     return
         denominator = 0
         for i in self.allowed:
-            denominator += self.graph.pheromone[self.state][self.current][i] ** self.colony.alpha * \
-                           self.eta[self.state][self.current][
-                               i] ** self.colony.beta
-        probabilities = [0 for i in range(self.graph.rank)]
-        for i in range(self.graph.rank):
+            denominator += self.graph.pheromone[self.state-1][self.current][i] ** self.colony.alpha * self.eta[self.state-1][self.current][i] ** self.colony.beta
+        probabilities = [0 for i in range(TAG)]
+        for i in range(TAG):
             try:
                 self.allowed.index(i)
                 if denominator == 0:
                     probabilities[i] = 0
                 else:
-                    probabilities[i] = self.graph.pheromone[self.state][self.current][i] ** self.colony.alpha * \
-                                       self.eta[self.state][self.current][i] ** self.colony.beta / denominator
+                    probabilities[i] = self.graph.pheromone[self.state-1][self.current][i] ** self.colony.alpha * self.eta[self.state-1][self.current][i] ** self.colony.beta / denominator
             except ValueError:
                 pass
 
@@ -113,21 +113,23 @@ class _Ant(object):
             if rand <= 0:
                 selected = i
                 break
-        self.tabu.append(selected)
-        self.total_cost += self.graph.matrix[self.state][self.current][selected]
+        if self.state != 0:
+            self.tabu.append(selected)
+        self.total_cost += self.graph.matrix[self.state-1][self.current][selected]
         self.current = selected
-        self.allowed = list(range(3))
+        self.allowed = list(range(TAG))
         self.increase_state()
 
     def _update_pheromone_delta(self):
-        self.pheromone_delta = [[[0 for j in range(self.graph.rank)] for i in range(self.graph.rank)] for k in
+        if self.state > self.graph.rank:
+            return
+        self.pheromone_delta = [[[0 for j in range(TAG)] for i in range(TAG)] for k in
                                 range(len(self.graph.pheromone))]
         for _ in range(1, len(self.tabu)):
             i = self.tabu[_ - 1]
-            j = self.tabu[_]
             if self.colony.update_strategy == 1:
-                self.pheromone_delta[i][j] = self.colony.Q
+                self.pheromone_delta[self.state-1][i] = self.colony.Q
             elif self.colony.update_strategy == 2:
-                self.pheromone_delta[i][j] = [self.colony.Q / i for i in self.graph.matrix[i][j]]
+                self.pheromone_delta[self.state-1][i] = [self.colony.Q / i for i in self.graph.matrix[self.state-1][i]]
             else:
-                self.pheromone_delta[i][j] = self.colony.Q / self.total_cost
+                self.pheromone_delta[self.state-1][i] = self.colony.Q / self.total_cost
