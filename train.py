@@ -4,7 +4,7 @@ import numpy as np
 TAG = 32
 
 def train():
-    f = open('output', 'r', encoding='utf-8')
+    f = open('output.txt', 'r', encoding='utf-8')
     text = f.read()
     f.close()
     tag = []
