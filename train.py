@@ -1,14 +1,16 @@
+import logging
 from collections import defaultdict
 import numpy as np
 
 TAG = 32
 
 def train():
+    print('start training ...')
     f = open('output.txt', 'r', encoding='utf-8')
     text = f.read()
     f.close()
     tag = []
-    word_count = defaultdict(lambda: np.ones(shape=(TAG)))
+    word_count = defaultdict(lambda: np.zeros(shape=(TAG)))
     transition = np.zeros(shape=(TAG, TAG))
     unigram = np.zeros(shape=(TAG))
     start_count = np.zeros(shape=(TAG))
@@ -46,7 +48,7 @@ def train():
     for k in word_count:
         s = sum(word_count[k])
         emission[k] = word_count[k] / s
-
+    print('training has finished')
     return start_count, emission, transition, tag
 
 

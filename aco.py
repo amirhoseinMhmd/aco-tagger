@@ -13,9 +13,6 @@ class Graph(object):
         for m in range(len(cost)):
             matrix = np.array(cost[m])
             shape = matrix.shape
-            # if m == 0:
-            #     pheromone.append([1 / (rank * rank) for j in range(shape[0])])
-            # else:
             pheromone.append([[1 / (rank * rank + 1) for j in range(shape[1])] for i in range(shape[0])])
         return pheromone
 
