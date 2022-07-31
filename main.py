@@ -1,3 +1,4 @@
+import sys
 import time
 
 from train import train
@@ -23,6 +24,8 @@ def calc_cost(model: Model, words, tagg):
         pos_dict[i] = pos
 
     for i in range(len(words)):
+        if not words[i] in model.lexicon:
+            raise Exception('Word {} not contains in vocabulary'.format(words[i]))
         temp = []
         if i == 0:
             a = []
@@ -30,7 +33,7 @@ def calc_cost(model: Model, words, tagg):
                 if model.lexicon[words[i]][j] != 0 and model.phi[j] != 0:
                     a.append(round((1 / model.lexicon[words[i]][j]) ** (1 / model.phi[j]), 4))
                 else:
-                    a.append(200000)
+                    a.append('inf')
             temp.append(a)
             for i in range(1, tagg):
                 temp.append([float('inf') for j in range(tagg)])
@@ -49,28 +52,30 @@ def mult_list(a, b):
         if a[i] != 0 and b[i] != 0:
             res.append(round((1 / a[i]) ** (1 / b[i]), 4))
         else:
-            res.append(200000)
+            res.append('inf')
     return res
 
 
-# در آینده به همکاری با همسایگان شتاب بیشتر خواهیم داد .
 def main():
     pi, emission, transition, tag = train()
     model = Model(emission, transition, pi, tag)
     while True:
-        text = input()
-        text = text.strip()
-        text = text.lower()
-        words = text.split(' ')
-        rank = len(words)
-        cost_matrix = calc_cost(model, words, TAG)
-        aco = ACO(ant_count=150, generations=3, alpha=.9, beta=.55, rho=1, q=10, strategy=0)
-        graph = Graph(cost_matrix, rank)
-        t = time.time()
-        print('start solving graph...')
-        path, cost = aco.solve(graph)
-        print(time.time() - t)
-        print('cost: {} \npath: {}'.format(cost, translate_path(words, path)))
+        try:
+            text = input()
+            text = text.strip()
+            text = text.lower()
+            words = text.split(' ')
+            rank = len(words)
+            cost_matrix = calc_cost(model, words, TAG)
+            aco = ACO(ant_count=100, generations=7, alpha=.90, beta=.9, rho=.90, q=10, strategy=0)
+            graph = Graph(cost_matrix, rank)
+            t = time.time()
+            print('start solving graph...')
+            path, cost = aco.solve(graph)
+            print('cost: {} \npath: {}'.format(cost, translate_path(words, path)))
+            print(time.time() - t)
+        except:
+            print(sys.exc_info()[1].args[0])
 
 
 def translate_path(words, path):

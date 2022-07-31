@@ -80,14 +80,12 @@ class _Ant(object):
                 temp.append([1 / m for m in graph.matrix[j]])
             else:
                 for i in graph.matrix[j]:
-                    temp.append([1 / m for m in i])
+                    temp.append([1 / float(m) for m in i])
 
             eta.append(temp)
         return eta
 
     def _select_next(self):
-        # if self.state > self.graph.rank:
-        #     return
         denominator = 0
         for i in self.allowed:
             denominator += self.graph.pheromone[self.state-1][self.current][i] ** self.colony.alpha * self.eta[self.state-1][self.current][i] ** self.colony.beta
