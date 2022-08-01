@@ -25,7 +25,7 @@ def calc_cost(model: Model, words, tagg):
 
     for i in range(len(words)):
         if not words[i] in model.lexicon:
-            raise Exception('Word {} not contains in vocabulary'.format(words[i]))
+            raise Exception('The word {} not contained in the dictionary'.format(words[i]))
         temp = []
         if i == 0:
             a = []
