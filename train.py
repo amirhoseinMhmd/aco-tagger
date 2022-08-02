@@ -1,6 +1,7 @@
 import logging
 from collections import defaultdict
 import numpy as np
+from random import shuffle
 
 TAG = 32
 
@@ -49,7 +50,8 @@ def train():
         s = sum(word_count[k])
         emission[k] = word_count[k] / s
     print('training has finished')
-    return start_count, emission, transition, tag
+    shuffle(lines)
+    return start_count, emission, transition, tag, lines[:100]
 
 
 if __name__ == '__main__':
