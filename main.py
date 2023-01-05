@@ -2,9 +2,9 @@ import sys
 import time
 
 from train import train
-import numpy as np
 
 from aco import ACO, Graph
+from viterbi import Viterbi
 
 pos_dict = {}
 TAG = 32
@@ -68,12 +68,14 @@ def main():
             rank = len(words)
             cost_matrix = calc_cost(model, words, TAG)
             aco = ACO(ant_count=100, generations=7, alpha=.90, beta=.9, rho=.90, q=10, strategy=0)
+            viterbi = Viterbi(pi, emission, transition, tag)
             graph = Graph(cost_matrix, rank)
             t = time.time()
             print('start solving graph...')
             path, cost = aco.solve(graph)
             print('cost: {} \npath: {}'.format(cost, translate_path(words, path)))
             print(time.time() - t)
+            viterbi.solve(text)
         except:
             print(sys.exc_info()[1].args[0])
 
