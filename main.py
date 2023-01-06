@@ -1,6 +1,7 @@
 import time
 from train import train
 from aco import ACO, Graph
+from viterbi import Viterbi
 
 tag_dict = {}
 TAG = 32
@@ -63,19 +64,20 @@ def create_text(sentences: str):
     return text, tag
 
 
-def bleu(a, b):
+def bleu(actual, result):
     e = 0
-    for i in range(len(a)):
-        if a[i] == tag_dict[b[i]]:
+    for i in range(len(actual)):
+        if actual[i] == tag_dict[result[i]]:
             e += 1
-    return e / len(a)
+    return e / len(actual)
 
 
 def main():
-    pi, emission, transition, tag, tests = train()
-    model = Model(emission, transition, pi, tag)
-    total_error = 0.0
-    for test in tests:
+    pi, emission, transition, tags, tests = train()
+    model = Model(emission, transition, pi, tags)
+    aco_total_error = 0.0
+    viterbi_total_error = 0.0
+    for test in tests[:100]:
         test = test.strip()
         text, tag = create_text(test)
         text = text.strip()
@@ -87,18 +89,25 @@ def main():
         cost_matrix = calc_cost(model, words, TAG)
         aco = ACO(ant_count=100, generations=7, alpha=.90, beta=.9, rho=.90, q=10, strategy=0)
         graph = Graph(cost_matrix, rank)
+        viterbi = Viterbi(pi, emission, transition, tags)
 
         t = time.time()
-        print('start solving graph...')
-
+        # print('start solving graph...')
         path, cost = aco.solve(graph)
-        translate_path(words, path)
-        error = bleu(tag, path)
-        total_error += error
+        # translate_path(words, path)
+        aco_error = bleu(tag, path)
+        aco_total_error += aco_error
 
-        print('accuracy percentage : {}'.format(error * 100))
-        print('duration time : {}'.format(time.time() - t))
-    print('average accuracy {} '.format(100 * total_error / len(tests)))
+        viterbi_path = viterbi.solve(text)
+        viterbi_error = bleu(tag, viterbi_path)
+        viterbi_total_error += viterbi_error
+
+        print('aco accuracy percentage : {}'.format(aco_error * 100))
+        print('viterbi accuracy percentage : {}'.format(viterbi_error * 100))
+        # print('duration time : {}'.format(time.time() - t))
+        print('-------------------------------')
+    print('aco average   accuracy {} '.format(100 * aco_total_error / len(tests)))
+    print('viterbi average accuracy {} '.format(100 * viterbi_total_error / len(tests)))
 
 
 def translate_path(words, path):
