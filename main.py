@@ -1,18 +1,13 @@
-import time
+from model import Model
+
 from train import train
 from aco import ACO, Graph
+import datetime as dt
+from math import log10
 from viterbi import Viterbi
 
 tag_dict = {}
 TAG = 32
-
-
-class Model(object):
-    def __init__(self, lexicon, bigram, phi, tag):
-        self.lexicon = lexicon
-        self.bigram = bigram
-        self.phi = phi
-        self.tag = tag
 
 
 def calc_cost(model: Model, words, tagg):
@@ -26,9 +21,9 @@ def calc_cost(model: Model, words, tagg):
         temp = []
         if i == 0:
             a = []
-            for j in range(len(model.phi)):
-                if model.lexicon[words[i]][j] != 0 and model.phi[j] != 0:
-                    a.append(round((1 / model.lexicon[words[i]][j]) ** (1 / model.phi[j]), 4))
+            for j in range(len(model.pi)):
+                if model.lexicon[words[i]][j] != 0 and model.pi[j] != 0:
+                    a.append(round((model.lexicon[words[i]][j]) ** (log10(model.pi[j])), 4))
                 else:
                     a.append('inf')
             temp.append(a)
@@ -47,7 +42,7 @@ def mult_list(a, b):
     res = []
     for i in range(len(a)):
         if a[i] != 0 and b[i] != 0:
-            res.append(round((1 / a[i]) ** (1 / b[i]), 4))
+            res.append(round((a[i]) ** (log10(b[i])), 4))
         else:
             res.append('inf')
     return res
@@ -64,20 +59,31 @@ def create_text(sentences: str):
     return text, tag
 
 
-def bleu(actual, result):
+def accuracy(a, b):
     e = 0
-    for i in range(len(actual)):
-        if actual[i] == tag_dict[result[i]]:
+    for i in range(len(a)):
+        if a[i] == tag_dict[b[i]]:
             e += 1
-    return e / len(actual)
+    return e / len(a)
 
 
 def main():
+    ant_count = 3
+    generations = 20
+    alpha = .9
+    beta = .9
+    rho = .95
+    q = 10
+    strategy = 2
+    output = str(dt.datetime.now()) + str(ant_count) + "-" + str(generations) + "-" + str(alpha) + "-" + str(
+        beta) + "-" + str(rho) + "-" + str(
+        q) + "-" + str(strategy)
     pi, emission, transition, tags, tests = train()
     model = Model(emission, transition, pi, tags)
     aco_total_error = 0.0
     viterbi_total_error = 0.0
-    for test in tests[:100]:
+    index = 1
+    for test in tests:
         test = test.strip()
         text, tag = create_text(test)
         text = text.strip()
@@ -86,28 +92,35 @@ def main():
         words = text.split(' ')
         rank = len(words)
 
-        cost_matrix = calc_cost(model, words, TAG)
-        aco = ACO(ant_count=100, generations=7, alpha=.90, beta=.9, rho=.90, q=10, strategy=0)
-        graph = Graph(cost_matrix, rank)
-        viterbi = Viterbi(pi, emission, transition, tags)
+        try:
+            cost_matrix = calc_cost(model, words, TAG)
+            aco = ACO(ant_count=ant_count, generations=generations, alpha=alpha, beta=beta, rho=rho, q=q,
+                      strategy=strategy)
+            graph = Graph(cost_matrix, rank)
 
-        t = time.time()
-        # print('start solving graph...')
-        path, cost = aco.solve(graph)
-        # translate_path(words, path)
-        aco_error = bleu(tag, path)
-        aco_total_error += aco_error
+            viterbi = Viterbi(model)
 
-        viterbi_path = viterbi.solve(text)
-        viterbi_error = bleu(tag, viterbi_path)
-        viterbi_total_error += viterbi_error
+            aco_path, cost = aco.solve(graph)
+            aco_error = accuracy(tag, aco_path)
+            aco_total_error += aco_error
 
-        print('aco accuracy percentage : {}'.format(aco_error * 100))
-        print('viterbi accuracy percentage : {}'.format(viterbi_error * 100))
-        # print('duration time : {}'.format(time.time() - t))
-        print('-------------------------------')
-    print('aco average   accuracy {} '.format(100 * aco_total_error / len(tests)))
-    print('viterbi average accuracy {} '.format(100 * viterbi_total_error / len(tests)))
+            viterbi_path = viterbi.solve(text)
+            viterbi_error = accuracy(tag, viterbi_path)
+            viterbi_total_error += viterbi_error
+
+            f = open(output, 'a', encoding='utf-8')
+            f.write('---------------------------------------------------------\n')
+            f.write(str(tests.index(test)) + '/' + str(len(tests)) + '\n')
+            f.write('aco accuracy percentage : {}'.format(aco_error * 100) + '\n')
+            f.write('viterbi accuracy percentage : {}'.format(viterbi_error * 100) + '\n')
+            f.write('\n')
+            f.write('aco average accuracy {} '.format(100 * aco_total_error / index) + '\n')
+            f.write('viterbi average accuracy {} '.format(100 * viterbi_total_error / index) + '\n')
+            # f.write('duration time : {}'.format(time.time() - t) + '\n')
+            f.close()
+            index += 1
+        except Exception as e:
+            print(e)
 
 
 def translate_path(words, path):
