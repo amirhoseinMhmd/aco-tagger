@@ -39,8 +39,9 @@ class ACO(object):
     def solve(self, graph: Graph):
         best_cost = float('inf')
         best_solution = []
+        eta = self.calc_eta(graph)
         for gen in range(self.generations):
-            ants = [_Ant(self, graph) for i in range(self.ant_count)]
+            ants = [_Ant(self, graph, eta) for i in range(self.ant_count)]
             for ant in ants:
                 for i in range(graph.rank +1):
                     ant._select_next()
@@ -50,26 +51,6 @@ class ACO(object):
                 ant._update_pheromone_delta()
             self._update_pheromone(graph, ants)
         return best_solution, best_cost
-
-
-class _Ant(object):
-    def __init__(self, aco: ACO, graph: Graph):
-        self.colony = aco
-        self.graph = graph
-        self.total_cost = 0.0
-        self.tabu = []
-        self.pheromone_delta = []
-        self.allowed = [i for i in range(TAG)]
-        self.eta = self.calc_eta(graph)
-        start = 0
-        self.current = start
-        self.state = 0
-
-    def increase_state(self):
-        self.state = self.state + 1
-
-    def set_cost(self, cost):
-        self.total_cost += cost
 
     def calc_eta(self, graph):
         eta = []
@@ -84,6 +65,26 @@ class _Ant(object):
 
             eta.append(temp)
         return eta
+
+
+class _Ant(object):
+    def __init__(self, aco: ACO, graph: Graph, eta):
+        self.colony = aco
+        self.graph = graph
+        self.total_cost = 0.0
+        self.tabu = []
+        self.pheromone_delta = []
+        self.allowed = [i for i in range(TAG)]
+        self.eta = eta
+        start = 0
+        self.current = start
+        self.state = 0
+
+    def increase_state(self):
+        self.state = self.state + 1
+
+    def set_cost(self, cost):
+        self.total_cost += cost
 
     def _select_next(self):
         denominator = 0
