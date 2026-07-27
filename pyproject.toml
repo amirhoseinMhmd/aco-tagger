@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pos-aco"
+version = "0.2.0"
+description = "Part-of-speech tagging by ant colony optimisation"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+train = ["nltk>=3.8"]
+
+[project.scripts]
+pos-aco = "pos_aco.cli:main"
+pos-aco-train = "pos_aco.train:main"
+
+[tool.setuptools.packages.find]
+include = ["pos_aco*"]
