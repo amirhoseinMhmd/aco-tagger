@@ -1,4 +1,4 @@
-# pos-aco
+# **ACO-tagger**: *A Novel Method for Part-of-Speech Tagging using Ant Colony Optimization'*
 
 Reference implementation of **ACO-tagger** — Mohammadi, Hajiaghajani & Bahrani,
 *"A Novel Method for Part-of-Speech Tagging using Ant Colony Optimization"*
