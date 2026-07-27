@@ -1,0 +1,10 @@
+word,tag,probability
+dead,NOUN,0.05
+dead,VERB,0.9
+dead,ART,0.05
+is,NOUN,0.15
+is,VERB,0.15
+is,ART,0.7
+john,NOUN,0.8
+john,VERB,0.1
+john,ART,0.1
